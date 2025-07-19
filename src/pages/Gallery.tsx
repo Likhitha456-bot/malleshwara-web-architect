@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,12 +15,36 @@ import {
   Grid3X3,
   List
 } from 'lucide-react';
+import apiService from '@/services/api';
 
 const Gallery = () => {
   const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [galleryItems, setGalleryItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadGalleryItems();
+  }, [selectedCategory]);
+
+  const loadGalleryItems = async () => {
+    try {
+      setLoading(true);
+      const params: any = { limit: 20 };
+      if (selectedCategory !== 'all') {
+        params.category = selectedCategory;
+      }
+      
+      const response = await apiService.getGalleryItems(params);
+      setGalleryItems(response.data.galleryItems);
+    } catch (error) {
+      console.error('Failed to load gallery items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = [
     { id: 'all', name: 'All Projects', count: 24 },
@@ -28,79 +54,7 @@ const Gallery = () => {
     { id: 'materials', name: 'Materials', count: 5 }
   ];
 
-  // Sample gallery data - in real app this would come from database
-  const galleryItems = [
-    {
-      id: 1,
-      type: 'image',
-      category: 'fencing',
-      title: 'Residential Boundary Fencing',
-      description: 'Complete boundary fencing for residential property in Bangalore',
-      location: 'Bangalore, Karnataka',
-      date: '2024-01-15',
-      thumbnail: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop',
-      image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=600&fit=crop'
-    },
-    {
-      id: 2,
-      type: 'image',
-      category: 'construction',
-      title: 'Commercial Building Construction',
-      description: 'Modern commercial building construction project',
-      location: 'Mysore, Karnataka',
-      date: '2024-02-10',
-      thumbnail: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=300&fit=crop',
-      image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=600&fit=crop'
-    },
-    {
-      id: 3,
-      type: 'video',
-      category: 'fencing',
-      title: 'Chain Link Fencing Installation',
-      description: 'Time-lapse video of chain link fencing installation process',
-      location: 'Hubli, Karnataka',
-      date: '2024-02-20',
-      thumbnail: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=400&h=300&fit=crop',
-      videoUrl: 'https://example.com/video1.mp4'
-    },
-    {
-      id: 4,
-      type: 'image',
-      category: 'catering',
-      title: 'Wedding Catering Setup',
-      description: 'Traditional wedding catering arrangement for 500 guests',
-      location: 'Mangalore, Karnataka',
-      date: '2024-03-05',
-      thumbnail: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop',
-      image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&h=600&fit=crop'
-    },
-    {
-      id: 5,
-      type: 'image',
-      category: 'materials',
-      title: 'Quality Construction Materials',
-      description: 'Premium quality stones and construction materials supply',
-      location: 'Dharwad, Karnataka',
-      date: '2024-03-12',
-      thumbnail: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop'
-    },
-    {
-      id: 6,
-      type: 'image',
-      category: 'fencing',
-      title: 'Industrial Security Fencing',
-      description: 'High-security fencing for industrial complex',
-      location: 'Bellary, Karnataka',
-      date: '2024-03-18',
-      thumbnail: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=600&fit=crop'
-    }
-  ];
 
-  const filteredItems = selectedCategory === 'all' 
-    ? galleryItems 
-    : galleryItems.filter(item => item.category === selectedCategory);
 
   return (
     <div className="min-h-screen">
@@ -163,13 +117,19 @@ const Gallery = () => {
       {/* Gallery Grid */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          {viewMode === 'grid' ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p>Loading gallery...</p>
+            </div>
+          ) : (
+            viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <Card key={item.id} className="group hover-lift cursor-pointer overflow-hidden elegant-shadow">
+              {galleryItems.map((item) => (
+                <Card key={item._id} className="group hover-lift cursor-pointer overflow-hidden elegant-shadow">
                   <div className="relative">
                     <img
-                      src={item.thumbnail}
+                      src={item.thumbnailUrl || item.url}
                       alt={item.title}
                       className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                     />
@@ -204,11 +164,11 @@ const Gallery = () => {
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <div className="flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
-                        {item.location}
+                        {item.location || 'Karnataka'}
                       </div>
                       <div className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(item.date).toLocaleDateString()}
+                        {new Date(item.projectDate || item.createdAt).toLocaleDateString()}
                       </div>
                     </div>
                   </CardContent>
@@ -217,12 +177,12 @@ const Gallery = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {filteredItems.map((item) => (
-                <Card key={item.id} className="hover-lift cursor-pointer">
+              {galleryItems.map((item) => (
+                <Card key={item._id} className="hover-lift cursor-pointer">
                   <div className="flex flex-col md:flex-row">
                     <div className="md:w-1/3">
                       <img
-                        src={item.thumbnail}
+                        src={item.thumbnailUrl || item.url}
                         alt={item.title}
                         className="w-full h-48 md:h-full object-cover"
                       />
@@ -246,11 +206,11 @@ const Gallery = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <MapPin className="h-4 w-4 mr-1" />
-                            {item.location}
+                            {item.location || 'Karnataka'}
                           </div>
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(item.date).toLocaleDateString()}
+                            {new Date(item.projectDate || item.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                         <Button
@@ -298,13 +258,13 @@ const Gallery = () => {
             </Button>
             {selectedImage.type === 'video' ? (
               <video
-                src={selectedImage.videoUrl}
+                src={selectedImage.url}
                 controls
                 className="w-full max-h-[80vh] object-contain"
               />
             ) : (
               <img
-                src={selectedImage.image}
+                src={selectedImage.url}
                 alt={selectedImage.title}
                 className="w-full max-h-[80vh] object-contain"
               />
@@ -315,11 +275,11 @@ const Gallery = () => {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <MapPin className="h-4 w-4 mr-1" />
-                  {selectedImage.location}
+                  {selectedImage.location || 'Karnataka'}
                 </div>
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
-                  {new Date(selectedImage.date).toLocaleDateString()}
+                  {new Date(selectedImage.projectDate || selectedImage.createdAt).toLocaleDateString()}
                 </div>
               </div>
             </div>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, LogIn, Hammer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
 
 const Login = () => {
   const { toast } = useToast();
@@ -20,27 +21,29 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate authentication - in real app this would use Supabase Auth
     try {
-      if (formData.email === 'admin@malleshwara.com' && formData.password === 'admin123') {
+      const response = await apiService.login(formData.email, formData.password);
+      
+      if (response.success) {
         toast({
           title: "Login Successful!",
           description: "Welcome to the admin dashboard.",
         });
         
-        // In real app, redirect to dashboard
-        console.log('Redirecting to dashboard...');
+        // Redirect to admin dashboard
+        navigate('/admin');
       } else {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Please try again.",
+          description: response.message || "Login failed. Please try again.",
           variant: "destructive"
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Error",
-        description: "An error occurred during login. Please try again.",
+        description: error instanceof Error ? error.message : "An error occurred during login.",
         variant: "destructive"
       });
     } finally {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
 
 const Testimonials = () => {
   const { t } = useTranslation();
@@ -28,70 +30,25 @@ const Testimonials = () => {
     comment: '',
     email: ''
   });
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample testimonials data - in real app this would come from database
-  const testimonials = [
-    {
-      id: 1,
-      name: 'Rajesh Kumar',
-      service: 'Fence Installation',
-      rating: 5,
-      comment: 'Excellent work quality and professional service. The team completed our boundary fencing project on time and within budget. Highly recommended!',
-      date: '2024-03-15',
-      location: 'Bangalore',
-      verified: true
-    },
-    {
-      id: 2,
-      name: 'Priya Sharma',
-      service: 'Wedding Catering',
-      rating: 5,
-      comment: 'Amazing catering service for our wedding. The food was delicious and the presentation was beautiful. All our guests were impressed!',
-      date: '2024-03-10',
-      location: 'Mysore',
-      verified: true
-    },
-    {
-      id: 3,
-      name: 'Manjunath Reddy',
-      service: 'Construction Materials',
-      rating: 4,
-      comment: 'Good quality materials at competitive prices. Delivery was prompt and the materials were as described. Will use their services again.',
-      date: '2024-03-05',
-      location: 'Hubli',
-      verified: true
-    },
-    {
-      id: 4,
-      name: 'Lakshmi Devi',
-      service: 'Labor Services',
-      rating: 5,
-      comment: 'Professional and skilled workers. They completed our home renovation project efficiently. Very satisfied with their work.',
-      date: '2024-02-28',
-      location: 'Mangalore',
-      verified: true
-    },
-    {
-      id: 5,
-      name: 'Suresh Gowda',
-      service: 'Fence Installation',
-      rating: 5,
-      comment: 'Outstanding service! They helped us with both material supply and installation. The quality of work exceeded our expectations.',
-      date: '2024-02-25',
-      location: 'Dharwad',
-      verified: true
-    },
-    {
-      id: 6,
-      name: 'Anita Kumari',
-      service: 'Event Catering',
-      rating: 4,
-      comment: 'Great food and service for our corporate event. The team was professional and handled everything smoothly.',
-      date: '2024-02-20',
-      location: 'Bellary',
-      verified: true
+  useEffect(() => {
+    loadTestimonials();
+  }, []);
+
+  const loadTestimonials = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getTestimonials({ limit: 20 });
+      setTestimonials(response.data.testimonials);
+    } catch (error) {
+      console.error('Failed to load testimonials:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
 
   const services = [
     'Fence Installation',
@@ -105,23 +62,32 @@ const Testimonials = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In real app, this would submit to database via Supabase
-    console.log('Testimonial submitted:', formData);
-    
-    toast({
-      title: "Thank you for your feedback!",
-      description: "Your testimonial has been submitted and will be reviewed before publication.",
-    });
-    
-    // Reset form
-    setFormData({
-      name: '',
-      service: '',
-      rating: 5,
-      comment: '',
-      email: ''
-    });
-    setShowForm(false);
+    // Submit to backend API
+    apiService.createTestimonial(formData)
+      .then(() => {
+        toast({
+          title: "Thank you for your feedback!",
+          description: "Your testimonial has been submitted and will be reviewed before publication.",
+        });
+        
+        // Reset form
+        setFormData({
+          name: '',
+          service: '',
+          rating: 5,
+          comment: '',
+          email: ''
+        });
+        setShowForm(false);
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: "Failed to submit testimonial. Please try again.",
+          variant: "destructive"
+        });
+        console.error('Testimonial submission error:', error);
+      });
   };
 
   const renderStars = (rating: number, interactive = false, onRatingChange?: (rating: number) => void) => {
@@ -280,9 +246,15 @@ const Testimonials = () => {
       {/* Testimonials Grid */}
       <section className="py-20">
         <div className="container mx-auto px-4">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p>Loading testimonials...</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((testimonial) => (
-              <Card key={testimonial.id} className="hover-lift elegant-shadow">
+              <Card key={testimonial._id} className="hover-lift elegant-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -291,10 +263,10 @@ const Testimonials = () => {
                       </div>
                       <div>
                         <h4 className="font-semibold">{testimonial.name}</h4>
-                        <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+                        {new Date(testimonial.createdAt).toLocaleDateString()}
                       </div>
                     </div>
-                    {testimonial.verified && (
+                    {testimonial.isVerified && (
                       <Badge variant="secondary" className="text-xs">
                         <CheckCircle className="mr-1 h-3 w-3" />
                         Verified
@@ -325,6 +297,7 @@ const Testimonials = () => {
               </Card>
             ))}
           </div>
+          )}
 
           {/* Load More */}
           <div className="text-center mt-12">
