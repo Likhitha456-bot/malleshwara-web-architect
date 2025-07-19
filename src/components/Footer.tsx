@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Hammer, Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { Hammer, Phone, Mail, MapPin, MessageCircle, Facebook, Instagram, Linkedin } from 'lucide-react';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -115,7 +115,18 @@ const Footer = () => {
           <p className="text-gray-400 text-sm">
             © 2024 Malleshwara Constructions. All rights reserved.
           </p>
-          <div className="flex items-center space-x-4 mt-4 md:mt-0">
+          <div className="flex items-center space-x-6 mt-4 md:mt-0">
+            <div className="flex items-center space-x-4">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <Linkedin className="h-5 w-5" />
+              </a>
+            </div>
             <span className="text-gray-400 text-sm">
               Built with ❤️ for quality construction
             </span>
